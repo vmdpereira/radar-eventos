@@ -86,6 +86,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // URL da sua API no Render (MANTENHA ESTE ENDEREÇO)
+        const API_URL = 'https://radar-eventos.onrender.com/eventos';
+
         const map = L.map('map').setView([-24.8576, -48.5058], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -107,6 +110,7 @@
 
         let marker;
 
+        // Lógica de Geocodificação Reversa (OSM Nominatim)
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
             document.getElementById('lat').value = lat;
@@ -120,23 +124,21 @@
             })
             .then(res => res.json())
             .then(data => {
-                campoCidade.value = data.address.city || data.address.town || data.address.village || data.address.suburb || "";
+                campoCidade.value = data.address.city || data.address.town || data.address.village || data.address.suburb || "Jacupiranga";
             })
-            .catch(() => { campoCidade.value = ""; });
+            .catch(() => { campoCidade.value = "Jacupiranga"; });
 
             if (marker) map.removeLayer(marker);
             marker = L.marker([lat, lng]).addTo(map);
         });
 
+        // Função para carregar eventos da nuvem (RENDER)
         function renderizarEventos() {
-            fetch('http://127.0.0.1:3001/eventos')
+            fetch(API_URL)
                 .then(res => res.json())
                 .then(eventos => {
                     eventos.forEach(ev => {
                         const iconeFinal = icones[ev.categoria] || icones['Outros'];
-                        
-                        // Formatação da data para o padrão Brasileiro (DD/MM/AAAA)
-                        // Usamos o timeZone UTC para evitar que a data mude devido ao fuso horário
                         const dataBr = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : "Sem data";
 
                         L.marker([ev.lat, ev.lng], { icon: iconeFinal })
@@ -148,11 +150,13 @@
                                 <strong>📍 Local:</strong> ${ev.cidade}
                             `);
                     });
-                });
+                })
+                .catch(err => console.error("Erro ao carregar do Render:", err));
         }
 
         renderizarEventos();
 
+        // Envio de novo evento para o Render
         document.getElementById('form-evento').onsubmit = function(e) {
             e.preventDefault();
             
@@ -167,16 +171,20 @@
 
             if (!payload.lat) { alert("Clique no mapa primeiro!"); return; }
 
-            fetch('http://127.0.0.1:3001/eventos', {
+            fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            .then(() => {
-                alert("✅ Evento publicado!");
-                window.location.reload();
+            .then(res => {
+                if (res.ok) {
+                    alert("✅ Evento publicado com sucesso na nuvem!");
+                    window.location.reload();
+                } else {
+                    alert("❌ Erro ao salvar. Verifique se o backend está online.");
+                }
             })
-            .catch(err => console.error(err));
+            .catch(err => alert("Erro de conexão com o servidor: " + err));
         };
     </script>
 </body>

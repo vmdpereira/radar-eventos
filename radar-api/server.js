@@ -1,17 +1,27 @@
-require('dotenv').config(); // 1. Carrega as variáveis do .env (instale com: npm install dotenv)
+const path = require('path');
+// Garante que o Node procure o .env na pasta correta da API
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 
 const app = express();
-// 2. O Render define a porta automaticamente, caso contrário usa 3001
+
+// O Render define a porta automaticamente através da variável de ambiente PORT
 const PORT = process.env.PORT || 3001; 
+
+// Debug inicial para conferência em Cajati
+console.log("--- DEBUG DE CONEXÃO ---");
+console.log("Tentando conectar com o usuário:", process.env.DB_USER);
+console.log("No host:", process.env.DB_HOST);
+console.log("------------------------");
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// --- CONFIGURAÇÃO DO POOL DE CONEXÃO (Mais estável para Nuvem) ---
+// --- CONFIGURAÇÃO DO POOL DE CONEXÃO (Otimizado para Nuvem/Aiven) ---
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -26,18 +36,19 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Teste de conexão inicial
+// Teste de conexão imediato ao iniciar
 db.getConnection((err, connection) => {
     if (err) {
-        console.error('❌ ERRO CRÍTICO: Não foi possível conectar ao Aiven:', err.message);
+        console.error('❌ ERRO CRÍTICO: Falha ao conectar ao Aiven:', err.message);
         return;
     }
-    console.log('✅ DATABASE: Conectado ao MySQL no Aiven com sucesso!');
-    connection.release(); // Libera a conexão de teste
+    console.log('✅ DATABASE: Conexão estabelecida com o MySQL no Aiven!');
+    connection.release(); 
 });
 
 // --- ROTAS DA API ---
 
+// 1. Rota de Verificação (Health Check)
 app.get('/', (req, res) => {
     res.send('API Radar Eventos Online (Render + Aiven)');
 });
@@ -48,15 +59,15 @@ app.get('/eventos', (req, res) => {
     
     db.query(query, (err, results) => {
         if (err) {
-            console.error('❌ ERRO AO BUSCAR:', err);
-            return res.status(500).json({ erro: 'Erro ao buscar dados.' });
+            console.error('❌ ERRO AO BUSCAR EVENTOS:', err);
+            return res.status(500).json({ erro: 'Erro ao buscar dados no banco.' });
         }
-        console.log(`🔍 BUSCA: ${results.length} eventos encontrados.`);
+        console.log(`🔍 BUSCA: ${results.length} eventos carregados do banco.`);
         res.json(results);
     });
 });
 
-// 3. Cadastrar evento (POST)
+// 3. Cadastrar evento (POST) - Com Logs detalhados
 app.post('/eventos', (req, res) => {
     const { nome, categoria, lat, lng, cidade, data_evento } = req.body;
     
@@ -64,7 +75,10 @@ app.post('/eventos', (req, res) => {
     const dataFinal = data_evento || null;
 
     console.log('--------------------------------------------------');
-    console.log(`📡 REQUISIÇÃO: Novo evento em ${cidadeFinal}`);
+    console.log(`📡 REQUISIÇÃO RECEBIDA:`);
+    console.log(`- Evento: ${nome}`);
+    console.log(`- Localização: ${cidadeFinal}`);
+    console.log(`- Categoria: ${categoria}`);
 
     const query = 'INSERT INTO eventos (nome, categoria, lat, lng, cidade, data_evento) VALUES (?, ?, ?, ?, ?, ?)';
     const values = [nome, categoria, lat, lng, cidadeFinal, dataFinal];
@@ -72,10 +86,10 @@ app.post('/eventos', (req, res) => {
     db.query(query, values, (err, result) => {
         if (err) {
             console.error('❌ ERRO NO INSERT:', err.message);
-            return res.status(500).json({ erro: 'Falha ao gravar no banco.' });
+            return res.status(500).json({ erro: 'Falha ao gravar evento no Aiven.' });
         }
         
-        console.log(`✅ SUCESSO: Evento ID #${result.insertId} salvo.`);
+        console.log(`✅ SUCESSO: Evento ID #${result.insertId} salvo no banco.`);
         console.log('--------------------------------------------------');
 
         res.status(201).json({ 
@@ -90,9 +104,11 @@ app.post('/eventos', (req, res) => {
     });
 });
 
-// Inicialização do servidor (Ajustado para o Render)
+// Inicialização do servidor configurada para aceitar conexões externas (0.0.0.0)
 app.listen(PORT, '0.0.0.0', () => {
     console.log('==================================================');
-    console.log(`🚀 BACKEND ONLINE: Porta ${PORT}`);
+    console.log(`🚀 BACKEND RADAR EVENTOS ONLINE`);
+    console.log(`📍 Porta: ${PORT}`);
+    console.log(`🕒 Status: Aguardando requisições...`);
     console.log('==================================================');
 });
