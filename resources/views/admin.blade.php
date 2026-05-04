@@ -63,8 +63,8 @@
     </main>
 
     <script>
-        // URL do seu server.js
-        const API_URL = 'http://127.0.0.1:3001';
+        // URL da sua API no Render (Para que o Arthur e a Nathalia consigam usar de casa)
+        const API_URL = 'https://radar-eventos.onrender.com';
 
         // Carrega a lista do MySQL via Node.js
         function buscarEventos() {
@@ -96,20 +96,30 @@
                 .catch(err => console.error("Erro ao carregar lista de admin:", err));
         }
 
-        // Função para deletar chamando a rota que criamos no server.js
+        /**
+         * Função para deletar usando a rota DELETE
+         * Agora comunicando com o server.js corretamente
+         */
         function deletarEvento(id) {
-            if (confirm("⚠️ Atenção: Esta ação removerá o evento do mapa de Jacupiranga/Cajati definitivamente. Confirmar?")) {
-                fetch(`${API_URL}/remover-evento`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id })
+            if (confirm("⚠️ Atenção: Esta ação removerá o evento do mapa definitivamente. Confirmar?")) {
+                
+                // Mudamos de POST para DELETE para bater com a rota app.delete do seu server.js
+                fetch(`${API_URL}/eventos/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
                 })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao excluir');
+                    return res.json();
+                })
                 .then(() => {
-                    alert("Sucesso! Evento removido.");
-                    buscarEventos(); // Atualiza a tabela sem dar F5
+                    alert("✅ Sucesso! Evento ID #" + id + " removido.");
+                    buscarEventos(); // Atualiza a tabela automaticamente
                 })
-                .catch(err => alert("Erro ao conectar com o servidor."));
+                .catch(err => {
+                    console.error(err);
+                    alert("❌ Erro na comunicação com o servidor. Verifique os logs do Render.");
+                });
             }
         }
 
