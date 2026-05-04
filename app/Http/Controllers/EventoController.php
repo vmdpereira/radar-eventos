@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class EventoController extends Controller
 {
@@ -45,5 +46,20 @@ class EventoController extends Controller
     // Exibe a página "Eventos"
     public function eventos() {
         return view('eventos');
+    }
+
+    public function destroy($id)
+    {
+    // Recupera a URL da API que configuramos no Environment do Render
+    $apiUrl = env('NEXT_PUBLIC_API_URL', 'https://radar-frontend-lwat.onrender.com');
+
+    // Faz a chamada DELETE para o Node.js
+    $response = Http::delete("{$apiUrl}/eventos/{$id}");
+
+    if ($response->successful()) {
+        return redirect()->route('admin')->with('sucesso', 'Evento removido com sucesso!');
+    }
+
+    return back()->with('erro', 'Falha ao excluir o evento na API.');
     }
 }

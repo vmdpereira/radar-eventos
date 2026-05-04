@@ -104,6 +104,29 @@ app.post('/eventos', (req, res) => {
     });
 });
 
+// 4. Excluir evento (DELETE)
+app.delete('/eventos/:id', (req, res) => {
+    const { id } = req.params;
+
+    console.log(`🗑️ SOLICITAÇÃO DE EXCLUSÃO: ID #${id}`);
+
+    const query = 'DELETE FROM eventos WHERE id = ?';
+
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('❌ ERRO AO EXCLUIR:', err.message);
+            return res.status(500).json({ erro: 'Falha ao excluir evento no banco.' });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ erro: 'Evento não encontrado.' });
+        }
+
+        console.log(`✅ SUCESSO: Evento ID #${id} removido do banco.`);
+        res.json({ mensagem: 'Evento excluído com sucesso!' });
+    });
+});
+
 // Inicialização do servidor configurada para aceitar conexões externas (0.0.0.0)
 app.listen(PORT, '0.0.0.0', () => {
     console.log('==================================================');
