@@ -64,14 +64,15 @@
                                 <input type="text" id="cidade" class="form-control border-primary" placeholder="Clique no mapa..." required>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label text-primary">Data do Evento</label>
-                                <input type="date" id="data_evento" class="form-control border-primary" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label text-primary">Horário do Evento</label>
-                                <input type="time" id="horario_evento" class="form-control border-primary" required>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-primary">Data</label>
+                                    <input type="date" id="data_evento" class="form-control border-primary" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-primary">Horário</label>
+                                    <input type="time" id="horario_evento" class="form-control border-primary" required>
+                                </div>
                             </div>
 
                             <input type="hidden" id="lat">
@@ -91,7 +92,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // URL da sua API no Render (MANTENHA ESTE ENDEREÇO)
         const API_URL = 'https://radar-eventos.onrender.com/eventos';
 
         const map = L.map('map').setView([-24.8576, -48.5058], 13);
@@ -115,7 +115,6 @@
 
         let marker;
 
-        // Lógica de Geocodificação Reversa (OSM Nominatim)
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
             document.getElementById('lat').value = lat;
@@ -137,7 +136,6 @@
             marker = L.marker([lat, lng]).addTo(map);
         });
 
-        // Função para carregar eventos da nuvem (RENDER)
         function renderizarEventos() {
             fetch(API_URL)
                 .then(res => res.json())
@@ -145,6 +143,8 @@
                     eventos.forEach(ev => {
                         const iconeFinal = icones[ev.categoria] || icones['Outros'];
                         const dataBr = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : "Sem data";
+                        // Formatação simples do horário (HH:mm)
+                        const horarioFormatado = ev.horario ? ev.horario.substring(0, 5) : "Não definido";
 
                         L.marker([ev.lat, ev.lng], { icon: iconeFinal })
                             .addTo(map)
@@ -152,6 +152,7 @@
                                 <strong style="font-size: 1.1em;">${ev.nome}</strong><br>
                                 <span class="badge bg-primary mb-1">${ev.categoria}</span><br>
                                 <strong>📅 Data:</strong> ${dataBr}<br>
+                                <strong>🕒 Horário:</strong> ${horarioFormatado}<br>
                                 <strong>📍 Local:</strong> ${ev.cidade}
                             `);
                     });
@@ -161,7 +162,6 @@
 
         renderizarEventos();
 
-        // Envio de novo evento para o Render
         document.getElementById('form-evento').onsubmit = function(e) {
             e.preventDefault();
             
@@ -170,6 +170,7 @@
                 categoria: document.getElementById('categoria').value,
                 cidade: document.getElementById('cidade').value,
                 data_evento: document.getElementById('data_evento').value,
+                horario: document.getElementById('horario_evento').value, // Novo campo capturado
                 lat: document.getElementById('lat').value,
                 lng: document.getElementById('lng').value
             };
