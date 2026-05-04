@@ -69,7 +69,7 @@ app.get('/eventos', (req, res) => {
 
 // 3. Cadastrar evento (POST) - Com Logs detalhados
 app.post('/eventos', (req, res) => {
-    const { nome, categoria, lat, lng, cidade, data_evento } = req.body;
+    const { nome, categoria, lat, lng, cidade, data_evento, horario } = req.body;
     
     const cidadeFinal = cidade || 'Local não identificado';
     const dataFinal = data_evento || null;
@@ -79,9 +79,10 @@ app.post('/eventos', (req, res) => {
     console.log(`- Evento: ${nome}`);
     console.log(`- Localização: ${cidadeFinal}`);
     console.log(`- Categoria: ${categoria}`);
+    console.log(`- Horário: ${horario}`);
 
-    const query = 'INSERT INTO eventos (nome, categoria, lat, lng, cidade, data_evento) VALUES (?, ?, ?, ?, ?, ?)';
-    const values = [nome, categoria, lat, lng, cidadeFinal, dataFinal];
+    const query = 'INSERT INTO eventos (nome, categoria, lat, lng, cidade, data_evento, horario) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const values = [nome, categoria, lat, lng, cidadeFinal, dataFinal, horario];
 
     db.query(query, values, (err, result) => {
         if (err) {
@@ -99,7 +100,9 @@ app.post('/eventos', (req, res) => {
             lat, 
             lng,
             cidade: cidadeFinal,
-            data_evento: dataFinal
+            data_evento: dataFinal,
+            horario
+
         });
     });
 });
