@@ -69,6 +69,11 @@
                                 <input type="date" id="data_evento" class="form-control border-primary" required>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label text-primary">Horário do Evento</label>
+                                <input type="time" id="horario_evento" class="form-control border-primary" required>
+                            </div>
+
                             <input type="hidden" id="lat">
                             <input type="hidden" id="lng">
                             
