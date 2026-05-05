@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Eventos V2</title>
+    <title>Radar Eventos V2.1 - DEPLOY FORÇADO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -17,7 +17,7 @@
     <div class="container shadow-lg p-0 bg-white min-vh-100">
         <header class="row g-0 text-white nav-radar py-4 shadow-sm">
             <div class="col-12 text-center">
-                <h1 class="fw-bold m-0">Radar Eventos V2</h1>
+                <h1 class="fw-bold m-0">Radar Eventos V2.1</h1>
                 <small>Geolocalização Cultural - Jacupiranga/SP</small>
             </div>
         </header>
@@ -46,12 +46,12 @@
                             @csrf
                             <div class="mb-3">
                                 <label class="form-label">Nome do Evento</label>
-                                <input type="text" id="nome" class="form-control border-primary" placeholder="Ex: Show na Praça" required>
+                                <input type="text" id="nome" name="nome" class="form-control border-primary" placeholder="Ex: Show na Praça" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label">Categoria</label>
-                                <select id="categoria" class="form-select border-primary">
+                                <select id="categoria" name="categoria" class="form-select border-primary">
                                     <option value="Show">Show / Música</option>
                                     <option value="Cultura">Cultura / Teatro</option>
                                     <option value="Esporte">Esporte / Lazer</option>
@@ -61,22 +61,22 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Cidade</label>
-                                <input type="text" id="cidade" class="form-control border-primary" placeholder="Clique no mapa..." required>
+                                <input type="text" id="cidade" name="cidade" class="form-control border-primary" placeholder="Clique no mapa..." required>
                             </div>
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label text-primary">Data</label>
-                                    <input type="date" id="data_evento" class="form-control border-primary" required>
+                                    <input type="date" id="data_evento" name="data_evento" class="form-control border-primary" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label text-primary">Horário</label>
-                                    <input type="time" id="horario_evento" class="form-control border-primary" required>
+                                    <input type="time" id="horario_evento" name="horario" class="form-control border-primary" required>
                                 </div>
                             </div>
 
-                            <input type="hidden" id="lat">
-                            <input type="hidden" id="lng">
+                            <input type="hidden" id="lat" name="lat">
+                            <input type="hidden" id="lng" name="lng">
                             
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mt-2 shadow-sm">Publicar Agora</button>
                         </form>
@@ -143,7 +143,6 @@
                     eventos.forEach(ev => {
                         const iconeFinal = icones[ev.categoria] || icones['Outros'];
                         const dataBr = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : "Sem data";
-                        // Formatação simples do horário (HH:mm)
                         const horarioFormatado = ev.horario ? ev.horario.substring(0, 5) : "Não definido";
 
                         L.marker([ev.lat, ev.lng], { icon: iconeFinal })
@@ -170,7 +169,7 @@
                 categoria: document.getElementById('categoria').value,
                 cidade: document.getElementById('cidade').value,
                 data_evento: document.getElementById('data_evento').value,
-                horario: document.getElementById('horario_evento').value, // Novo campo capturado
+                horario: document.getElementById('horario_evento').value, 
                 lat: document.getElementById('lat').value,
                 lng: document.getElementById('lng').value
             };
@@ -184,13 +183,13 @@
             })
             .then(res => {
                 if (res.ok) {
-                    alert("✅ Evento publicado com sucesso na nuvem!");
+                    alert("✅ Evento publicado com sucesso!");
                     window.location.reload();
                 } else {
-                    alert("❌ Erro ao salvar. Verifique se o backend está online.");
+                    alert("❌ Erro ao salvar. Verifique o backend.");
                 }
             })
-            .catch(err => alert("Erro de conexão com o servidor: " + err));
+            .catch(err => alert("Erro de conexão: " + err));
         };
     </script>
 </body>
