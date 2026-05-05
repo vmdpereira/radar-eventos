@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Eventos Technologies</title>
+    <title>Radar Eventos V2.1 - DEPLOY FORÇADO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -17,7 +17,7 @@
     <div class="container shadow-lg p-0 bg-white min-vh-100">
         <header class="row g-0 text-white nav-radar py-4 shadow-sm">
             <div class="col-12 text-center">
-                <h1 class="fw-bold m-0">Radar Eventos Technologies</h1>
+                <h1 class="fw-bold m-0">Radar Eventos V2.1</h1>
                 <small>Geolocalização Cultural - Jacupiranga/SP</small>
             </div>
         </header>
@@ -46,12 +46,12 @@
                             @csrf
                             <div class="mb-3">
                                 <label class="form-label">Nome do Evento</label>
-                                <input type="text" id="nome" class="form-control border-primary" placeholder="Ex: Show na Praça" required>
+                                <input type="text" id="nome" name="nome" class="form-control border-primary" placeholder="Ex: Show na Praça" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label">Categoria</label>
-                                <select id="categoria" class="form-select border-primary">
+                                <select id="categoria" name="categoria" class="form-select border-primary">
                                     <option value="Show">Show / Música</option>
                                     <option value="Cultura">Cultura / Teatro</option>
                                     <option value="Esporte">Esporte / Lazer</option>
@@ -61,16 +61,22 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Cidade</label>
-                                <input type="text" id="cidade" class="form-control border-primary" placeholder="Clique no mapa..." required>
+                                <input type="text" id="cidade" name="cidade" class="form-control border-primary" placeholder="Clique no mapa..." required>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label text-primary">Data do Evento</label>
-                                <input type="date" id="data_evento" class="form-control border-primary" required>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-primary">Data</label>
+                                    <input type="date" id="data_evento" name="data_evento" class="form-control border-primary" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-primary">Horário</label>
+                                    <input type="time" id="horario_evento" name="horario" class="form-control border-primary" required>
+                                </div>
                             </div>
 
-                            <input type="hidden" id="lat">
-                            <input type="hidden" id="lng">
+                            <input type="hidden" id="lat" name="lat">
+                            <input type="hidden" id="lng" name="lng">
                             
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mt-2 shadow-sm">Publicar Agora</button>
                         </form>
@@ -86,7 +92,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // URL da sua API no Render (MANTENHA ESTE ENDEREÇO)
         const API_URL = 'https://radar-eventos.onrender.com/eventos';
 
         const map = L.map('map').setView([-24.8576, -48.5058], 13);
@@ -110,7 +115,6 @@
 
         let marker;
 
-        // Lógica de Geocodificação Reversa (OSM Nominatim)
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
             document.getElementById('lat').value = lat;
@@ -132,7 +136,6 @@
             marker = L.marker([lat, lng]).addTo(map);
         });
 
-        // Função para carregar eventos da nuvem (RENDER)
         function renderizarEventos() {
             fetch(API_URL)
                 .then(res => res.json())
@@ -140,6 +143,7 @@
                     eventos.forEach(ev => {
                         const iconeFinal = icones[ev.categoria] || icones['Outros'];
                         const dataBr = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : "Sem data";
+                        const horarioFormatado = ev.horario ? ev.horario.substring(0, 5) : "Não definido";
 
                         L.marker([ev.lat, ev.lng], { icon: iconeFinal })
                             .addTo(map)
@@ -147,6 +151,7 @@
                                 <strong style="font-size: 1.1em;">${ev.nome}</strong><br>
                                 <span class="badge bg-primary mb-1">${ev.categoria}</span><br>
                                 <strong>📅 Data:</strong> ${dataBr}<br>
+                                <strong>🕒 Horário:</strong> ${horarioFormatado}<br>
                                 <strong>📍 Local:</strong> ${ev.cidade}
                             `);
                     });
@@ -156,7 +161,6 @@
 
         renderizarEventos();
 
-        // Envio de novo evento para o Render
         document.getElementById('form-evento').onsubmit = function(e) {
             e.preventDefault();
             
@@ -165,6 +169,7 @@
                 categoria: document.getElementById('categoria').value,
                 cidade: document.getElementById('cidade').value,
                 data_evento: document.getElementById('data_evento').value,
+                horario: document.getElementById('horario_evento').value, 
                 lat: document.getElementById('lat').value,
                 lng: document.getElementById('lng').value
             };
@@ -178,13 +183,13 @@
             })
             .then(res => {
                 if (res.ok) {
-                    alert("✅ Evento publicado com sucesso na nuvem!");
+                    alert("✅ Evento publicado com sucesso!");
                     window.location.reload();
                 } else {
-                    alert("❌ Erro ao salvar. Verifique se o backend está online.");
+                    alert("❌ Erro ao salvar. Verifique o backend.");
                 }
             })
-            .catch(err => alert("Erro de conexão com o servidor: " + err));
+            .catch(err => alert("Erro de conexão: " + err));
         };
     </script>
 </body>
