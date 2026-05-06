@@ -30,7 +30,7 @@
                 <h2 class="text-radar mb-4 border-bottom pb-2">A Missão do Radar Eventos</h2>
                 
                 <p class="lead mb-4 text-dark">
-                    A plataforma **Radar Eventos** tem como objetivo principal conectar usuários aos eventos de sua preferência, como shows, feiras culturais e gastronomia, utilizando o poder da geolocalização em tempo real.
+                    A plataforma Radar Eventos tem como objetivo principal conectar usuários aos eventos de sua preferência, como shows, feiras culturais e gastronomia, utilizando o poder da geolocalização em tempo real.
                 </p>
 
                 <h2 class="text-radar mt-5 mb-3">Funcionalidades e Segurança</h2>
