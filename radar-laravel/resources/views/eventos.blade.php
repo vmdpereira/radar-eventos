@@ -72,7 +72,7 @@
     </main>
 
     <footer class="container-fluid py-3 text-center text-muted border-top bg-white mt-auto">
-        <small>Radar Eventos Technologies &copy; 2026 - Desenvolvido em Cajati/SP</small>
+        <small>Radar Eventos Technologies &copy; 2026 - Desenvolvido em Jacupiranga-SP</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
