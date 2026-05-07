@@ -8,7 +8,7 @@ import axios from 'axios';
 import logoImg from './assets/radarlogo.jpeg';
 
 const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
-const AZUL_RADAR = '#005eb8'; // Tom de azul extraído do seu logo
+const AZUL_FUNDO_LOGO_EXATO = '#0059b3'; 
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -18,19 +18,16 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      // 1. Solicita permissão para acessar o GPS
-      let { status } = await Location.requestForegroundPermissionsPermissionsAsync();
+      let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         alert('Permissão de localização negada. O mapa iniciará na posição padrão.');
         setLoading(false);
         return;
       }
 
-      // 2. Captura a posição atual
       let currentLocation = await Location.getCurrentPositionAsync({});
       setLocation(currentLocation.coords);
 
-      // 3. Busca os eventos na API
       try {
         const response = await axios.get(API_URL);
         setEventos(response.data);
@@ -46,37 +43,34 @@ export default function App() {
   if (exibirBoasVindas) {
     return (
       <View style={styles.welcomeContainer}>
-        <View style={styles.welcomeContent}>
-          <Image 
-            source={logoImg} 
-            style={styles.logoImage} 
-            resizeMode="contain" 
-          />
-          
+        <Image 
+          source={logoImg} 
+          style={styles.logoImageFullWidth} 
+          resizeMode="cover" 
+        />
+        <View style={styles.contentArea}>
           <Text style={styles.welcomeTitle}>Bem-vindo ao Radar</Text>
           <Text style={styles.welcomeSubtitle}>
-            Encontre os melhores eventos culturais de Jacupiranga e região.
+            Descubra eventos culturais, lazer e shows em Jacupiranga e região em tempo real.
           </Text>
-
           <TouchableOpacity 
-            style={styles.button} 
+            style={styles.buttonWelcome} 
             onPress={() => setExibirBoasVindas(false)}
           >
-            <Text style={styles.buttonText}>Acessar Mapa</Text>
+            <Text style={styles.buttonTextWelcome}>Acessar Mapa</Text>
           </TouchableOpacity>
         </View>
-        
-        <Text style={styles.footerText}>PTCC - Radar Eventos Technologies</Text>
+        <Text style={styles.footerText}>PTCC - Radar Eventos Technologies © 2026</Text>
       </View>
     );
   }
 
-  // TELA DE CARREGAMENTO (Antes de abrir o mapa)
+  // TELA DE CARREGAMENTO
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={AZUL_RADAR} />
-        <Text style={{ marginTop: 10, color: AZUL_RADAR }}>Sincronizando eventos...</Text>
+      <View style={styles.containerLoading}>
+        <ActivityIndicator size="large" color={AZUL_FUNDO_LOGO_EXATO} />
+        <Text style={{ marginTop: 15, color: AZUL_FUNDO_LOGO_EXATO, fontWeight: 'bold' }}>Sincronizando eventos...</Text>
       </View>
     );
   }
@@ -99,17 +93,31 @@ export default function App() {
               longitude: parseFloat(evento.lng),
             }}
             title={evento.nome}
-            pinColor={AZUL_RADAR}
+            pinColor={AZUL_FUNDO_LOGO_EXATO}
             description={`${evento.categoria} - ${evento.cidade}`}
           />
         ))}
       </MapView>
+
+      {/* BOTÃO DE VOLTAR - Pequeno e discreto sobre o mapa */}
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => setExibirBoasVindas(true)}
+      >
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
+const screenWidth = Dimensions.get('window').width;
+
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  containerLoading: {
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
@@ -119,60 +127,80 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // Estilos da Tela de Boas-Vindas
-  welcomeContainer: {
-    flex: 1,
-    backgroundColor: AZUL_RADAR,
+  // Botão de Voltar no Mapa
+  backButton: {
+    position: 'absolute',
+    top: 50, // Distância do topo para não ficar em cima da barra de status
+    left: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-  },
-  welcomeContent: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    padding: 30,
-    width: '100%',
-    elevation: 8,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  logoImage: {
-    width: 220,
-    height: 120,
-    marginBottom: 10,
+  backButtonText: {
+    fontSize: 24,
+    color: AZUL_FUNDO_LOGO_EXATO,
+    fontWeight: 'bold',
+  },
+  // Estilos da Boas-Vindas
+  welcomeContainer: {
+    flex: 1,
+    backgroundColor: AZUL_FUNDO_LOGO_EXATO,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  logoImageFullWidth: {
+    width: screenWidth,
+    height: 250,
+    marginTop: 50,
+  },
+  contentArea: {
+    flex: 1,
+    width: '100%',
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: AZUL_RADAR,
-    marginBottom: 8,
+    color: '#ffffff',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   welcomeSubtitle: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 16,
+    color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 20,
+    marginBottom: 50,
+    lineHeight: 22,
+    opacity: 0.9,
   },
-  button: {
-    backgroundColor: AZUL_RADAR,
-    paddingVertical: 14,
-    borderRadius: 12,
+  buttonWelcome: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 18,
+    borderRadius: 15,
     width: '100%',
     alignItems: 'center',
+    elevation: 8,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+  buttonTextWelcome: {
+    color: AZUL_FUNDO_LOGO_EXATO,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   footerText: {
-    color: '#fff',
-    marginTop: 20,
-    fontSize: 11,
+    color: '#ffffff',
+    position: 'absolute',
+    bottom: 30,
+    fontSize: 12,
     opacity: 0.7,
   },
 });
