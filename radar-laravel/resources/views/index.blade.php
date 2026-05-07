@@ -20,11 +20,13 @@
 </head>
 <body class="bg-light">
     <div class="container shadow-lg p-0 bg-white">
-        <header class="row g-0 text-white nav-radar py-3 shadow-sm">
-            <div class="col-12 text-center">
-                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 60px;">
+        <header class="row g-0 text-white nav-radar py-3 shadow-sm align-items-center">
+            <div class="col-auto ps-4">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" style="height: 120px; border-radius: 8px;">
+            </div>
+            <div class="col text-start ps-3">
                 <h1 class="fw-bold m-0">Radar Eventos</h1>
-                <small>Geolocalização Cultural - Jacupiranga/SP</small>
+                <p class="m-0 opacity-75">Geolocalização Cultural - Jacupiranga/SP</p>
             </div>
         </header>
 
