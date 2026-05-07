@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import axios from 'axios';
 
 // URL da API que configuramos e subimos no Render
-const API_URL = 'https://radar-eventos.onrender.com/eventos';
+const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
 
 export default function App() {
   const [location, setLocation] = useState(null);
