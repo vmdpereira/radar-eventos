@@ -92,7 +92,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const API_URL = 'https://radar-eventos.onrender.com/eventos';
+        const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
 
         const map = L.map('map').setView([-24.8576, -48.5058], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
