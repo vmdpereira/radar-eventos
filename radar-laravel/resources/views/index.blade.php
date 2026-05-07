@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         #map { height: 450px; width: 100%; border-radius: 10px; border: 2px solid #0059b3; }
-        .nav-radar { background-color: #0059b3; }
+        .nav-radar { background-color: #0059b3; min-height: 150px; }
         .header-inner { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-        .header-logo { height: 160px; max-height: 180px; width: auto; }
+        .header-logo { height: 140px; max-height: 160px; width: auto; }
         .form-label { font-weight: bold; color: #0059b3; }
         .leaflet-popup-content-wrapper { border-left: 5px solid #0059b3; }
         .bg-primary { background-color: #0059b3 !important; }

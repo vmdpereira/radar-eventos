@@ -7,9 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* Ajuste para garantir que o azul seja o mesmo do menu principal */
-        .header-radar { background-color: #0059b3 !important; }
+        .header-radar { background-color: #0059b3 !important; min-height: 170px; }
         .header-inner { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-        .header-logo { height: 160px; max-height: 180px; width: auto; }
+        .header-logo { height: 140px; max-height: 160px; width: auto; }
         .text-radar { color: #0059b3 !important; }
     </style>
 </head>
