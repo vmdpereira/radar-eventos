@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         #map { height: 450px; width: 100%; border-radius: 10px; border: 2px solid #0059b3; }
-        .nav-radar { background-color: #0059b3; }
+        .nav-radar { background-color: #0059b3; min-height: 150px; }
+        .header-inner { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .header-logo { height: 140px; max-height: 160px; width: auto; }
         .form-label { font-weight: bold; color: #0059b3; }
         .leaflet-popup-content-wrapper { border-left: 5px solid #0059b3; }
         .bg-primary { background-color: #0059b3 !important; }
@@ -21,10 +23,18 @@
 <body class="bg-light">
     <div class="container shadow-lg p-0 bg-white min-vh-100">
         <header class="row g-0 text-white nav-radar py-4 shadow-sm">
-            <div class="col-12 text-center">
-                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 60px;">
-                <h1 class="fw-bold m-0">Radar Eventos</h1>
-                <small>Geolocalização Cultural - Jacupiranga/SP</small>
+            <div class="col-12">
+                <div class="header-inner text-white">
+                    <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="header-logo">
+                    <div class="text-start">
+                        <h1 class="fw-bold m-0">Radar Eventos</h1>
+                        <small>Geolocalização Cultural - Jacupiranga/SP</small>
+                    </div>
+                </div>
+            </div>
+        </header>
+                    </div>
+                </div>
             </div>
         </header>
 

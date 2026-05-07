@@ -7,18 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* Ajuste para garantir que o azul seja o mesmo do menu principal */
-        .header-radar { background-color: #0059b3 !important; }
+        .header-radar { background-color: #0059b3 !important; min-height: 170px; }
+        .header-inner { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .header-logo { height: 140px; max-height: 160px; width: auto; }
         .text-radar { color: #0059b3 !important; }
     </style>
 </head>
 <body class="bg-light">
     
     <header class="container-fluid header-radar py-5 mb-5 shadow">
-        <div class="row">
-            <div class="col-12 text-center text-white">
-                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-3" style="height: 80px;">
-                <h1 class="display-4 fw-bold">Radar Eventos Technologies</h1>
-                <p class="lead">Inovação em Geolocalização e Entretenimento</p>
+        <div class="container">
+            <div class="header-inner text-white">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="header-logo">
+                <div>
+                    <h1 class="display-4 fw-bold">Radar Eventos Technologies</h1>
+                    <p class="lead">Inovação em Geolocalização e Entretenimento</p>
+                </div>
             </div>
         </div>
     </header>

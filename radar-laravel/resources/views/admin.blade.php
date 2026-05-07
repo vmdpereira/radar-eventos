@@ -6,21 +6,25 @@
     <title>Painel Admin - Radar Eventos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .nav-radar { background-color: #0059b3; }
+        .nav-radar { background-color: #0059b3; min-height: 140px; }
         .card-admin { border-radius: 15px; overflow: hidden; }
+        .header-inner { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .header-logo { height: 120px; max-height: 140px; width: auto; }
     </style>
 </head>
 <body class="bg-light">
 
     <!-- Header Simples -->
     <header class="text-white nav-radar py-3 shadow-sm mb-4">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div>
-                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 40px;">
-                <h1 class="h4 m-0 fw-bold">🛡️ Radar Eventos | Administração</h1>
-                <small>Gestão de pontos em Jacupiranga e Cajati</small>
+        <div class="container">
+            <div class="header-inner">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="header-logo">
+                <div>
+                    <h1 class="h4 m-0 fw-bold">🛡️ Radar Eventos | Administração</h1>
+                    <small>Gestão de pontos em Jacupiranga e Cajati</small>
+                </div>
+                <a href="{{ route('index') }}" class="btn btn-outline-light btn-sm fw-bold">Voltar ao Mapa</a>
             </div>
-            <a href="{{ route('index') }}" class="btn btn-outline-light btn-sm fw-bold">Voltar ao Mapa</a>
         </div>
     </header>
 
