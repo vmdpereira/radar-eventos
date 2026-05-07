@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Eventos V2.1 - DEPLOY FORÇADO</title>
+    <title>Radar Eventos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -17,7 +17,7 @@
     <div class="container shadow-lg p-0 bg-white min-vh-100">
         <header class="row g-0 text-white nav-radar py-4 shadow-sm">
             <div class="col-12 text-center">
-                <h1 class="fw-bold m-0">Radar Eventos V2.1</h1>
+                <h1 class="fw-bold m-0">Radar Eventos</h1>
                 <small>Geolocalização Cultural - Jacupiranga/SP</small>
             </div>
         </header>
@@ -92,7 +92,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const API_URL = 'https://radar-eventos.onrender.com/eventos';
+        const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
 
         const map = L.map('map').setView([-24.8576, -48.5058], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
