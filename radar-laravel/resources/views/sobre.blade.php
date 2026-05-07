@@ -12,7 +12,7 @@
 </head>
 <body class="bg-light">
     
-    <header class="container-fluid header-radar py-5 mb-5 shadow">
+    <header class="container-fluid header-radar py-4 mb-4 shadow">
         <div class="row">
             <div class="col-12 text-center text-white">
                 <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-3" style="height: 80px;">

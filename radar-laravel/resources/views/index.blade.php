@@ -19,8 +19,8 @@
     </style>
 </head>
 <body class="bg-light">
-    <div class="container shadow-lg p-0 bg-white min-vh-100">
-        <header class="row g-0 text-white nav-radar py-4 shadow-sm">
+    <div class="container shadow-lg p-0 bg-white">
+        <header class="row g-0 text-white nav-radar py-3 shadow-sm">
             <div class="col-12 text-center">
                 <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 60px;">
                 <h1 class="fw-bold m-0">Radar Eventos</h1>
