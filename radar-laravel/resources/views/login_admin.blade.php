@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Acesso Administrativo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .btn-primary { background-color: #0059b3; border-color: #0059b3; }
+        .btn-primary:hover { background-color: #004080; }
+    </style>
 </head>
 <body class="bg-light d-flex align-items-center vh-100">
     <div class="container" style="max-width: 400px;">

@@ -7,7 +7,7 @@
     <!-- Bootstrap 5.3.3 conforme sua estrutura -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .header-radar { background-color: #0d6efd !important; }
+        .header-radar { background-color: #0059b3 !important; }
         .img-event { 
             height: 300px; 
             object-fit: cover; 
@@ -24,6 +24,7 @@
     <header class="container-fluid header-radar py-5 mb-5 shadow">
         <div class="row">
             <div class="col-12 text-center text-white">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-3" style="height: 80px;">
                 <h1 class="display-3 fw-bold">Eventos</h1>
                 <p class="lead">Confira os eventos que estão acontecendo na cidade!</p>
                 <h3 class="fs-5">Shows, peças de teatro, exposições e muito mais!</h3>

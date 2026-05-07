@@ -7,10 +7,10 @@
     <!-- Bootstrap 5.3.3 conforme sua estrutura -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
-        .header-radar { background-color: #0d6efd !important; }
-        .text-radar { color: #0d6efd !important; }
-        .btn-radar { background-color: #0d6efd; color: white; border: none; }
-        .btn-radar:hover { background-color: #0b5ed7; color: white; }
+        .header-radar { background-color: #0059b3 !important; }
+        .text-radar { color: #0059b3 !important; }
+        .btn-radar { background-color: #0059b3; color: white; border: none; }
+        .btn-radar:hover { background-color: #004080; color: white; }
     </style>
 </head>
 <body class="bg-light">
@@ -19,6 +19,7 @@
     <header class="container-fluid header-radar py-4 mb-5 shadow">
         <div class="row">
             <div class="col-12 text-center text-white">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-3" style="height: 80px;">
                 <h1 class="display-4 fw-bold">Nossos Contatos</h1>
                 <p class="lead">Radar Eventos Technologies - Suporte e Atendimento</p>
             </div>

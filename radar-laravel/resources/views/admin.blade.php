@@ -6,7 +6,7 @@
     <title>Painel Admin - Radar Eventos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .nav-radar { background-color: #0d6efd; }
+        .nav-radar { background-color: #0059b3; }
         .card-admin { border-radius: 15px; overflow: hidden; }
     </style>
 </head>
@@ -16,6 +16,7 @@
     <header class="text-white nav-radar py-3 shadow-sm mb-4">
         <div class="container d-flex justify-content-between align-items-center">
             <div>
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 40px;">
                 <h1 class="h4 m-0 fw-bold">🛡️ Radar Eventos | Administração</h1>
                 <small>Gestão de pontos em Jacupiranga e Cajati</small>
             </div>

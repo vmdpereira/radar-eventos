@@ -7,16 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        #map { height: 450px; width: 100%; border-radius: 10px; border: 2px solid #0d6efd; }
-        .nav-radar { background-color: #0d6efd; }
-        .form-label { font-weight: bold; color: #0d6efd; }
-        .leaflet-popup-content-wrapper { border-left: 5px solid #0d6efd; }
+        #map { height: 450px; width: 100%; border-radius: 10px; border: 2px solid #0059b3; }
+        .nav-radar { background-color: #0059b3; }
+        .form-label { font-weight: bold; color: #0059b3; }
+        .leaflet-popup-content-wrapper { border-left: 5px solid #0059b3; }
+        .bg-primary { background-color: #0059b3 !important; }
+        .text-primary { color: #0059b3 !important; }
+        .border-primary { border-color: #0059b3 !important; }
+        .btn-primary { background-color: #0059b3; border-color: #0059b3; }
+        .btn-primary:hover { background-color: #004080; }
     </style>
 </head>
 <body class="bg-light">
     <div class="container shadow-lg p-0 bg-white min-vh-100">
         <header class="row g-0 text-white nav-radar py-4 shadow-sm">
             <div class="col-12 text-center">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-2" style="height: 60px;">
                 <h1 class="fw-bold m-0">Radar Eventos</h1>
                 <small>Geolocalização Cultural - Jacupiranga/SP</small>
             </div>

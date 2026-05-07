@@ -6,8 +6,8 @@
     <title>Radar Eventos - Sobre</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .header-radar { background-color: #0d6efd !important; }
-        .text-radar { color: #0d6efd !important; }
+        .header-radar { background-color: #0059b3 !important; }
+        .text-radar { color: #0059b3 !important; }
     </style>
 </head>
 <body class="bg-light">
@@ -15,6 +15,7 @@
     <header class="container-fluid header-radar py-5 mb-5 shadow">
         <div class="row">
             <div class="col-12 text-center text-white">
+                <img src="./img/radarlogo.jpeg" alt="Radar Logo" class="mb-3" style="height: 80px;">
                 <h1 class="display-4 fw-bold">Sobre a Empresa</h1>
                 <p class="lead">Radar Eventos Technologies</p>
             </div>
