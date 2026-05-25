@@ -36,14 +36,23 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Teste de conexão imediato ao iniciar
+// Teste de conexão imediato ao iniciar e atualização do Schema do Banco
 db.getConnection((err, connection) => {
     if (err) {
         console.error('❌ ERRO CRÍTICO: Falha ao conectar ao Aiven:', err.message);
         return;
     }
     console.log('✅ DATABASE: Conexão estabelecida com o MySQL no Aiven!');
-    connection.release(); 
+    
+    // Atualiza automaticamente o banco de dados adicionando a coluna link_ingresso se não existir
+    connection.query("ALTER TABLE eventos ADD COLUMN link_ingresso VARCHAR(255) DEFAULT NULL", (alterErr) => {
+        if (alterErr && alterErr.errno !== 1060) {
+            console.error('⚠️ ALERTA SCHEMA: Falha ao adicionar coluna link_ingresso:', alterErr.message);
+        } else {
+            console.log('✅ SCHEMA: Coluna link_ingresso garantida na tabela eventos!');
+        }
+        connection.release(); 
+    });
 });
 
 // --- ROTAS DA API ---
@@ -69,10 +78,11 @@ app.get('/eventos', (req, res) => {
 
 // 3. Cadastrar evento (POST) - Com Logs detalhados
 app.post('/eventos', (req, res) => {
-    const { nome, categoria, lat, lng, cidade, data_evento, horario } = req.body;
+    const { nome, categoria, lat, lng, cidade, data_evento, horario, link_ingresso } = req.body;
     
     const cidadeFinal = cidade || 'Local não identificado';
     const dataFinal = data_evento || null;
+    const linkFinal = link_ingresso || null;
 
     console.log('--------------------------------------------------');
     console.log(`📡 REQUISIÇÃO RECEBIDA:`);
@@ -80,9 +90,10 @@ app.post('/eventos', (req, res) => {
     console.log(`- Localização: ${cidadeFinal}`);
     console.log(`- Categoria: ${categoria}`);
     console.log(`- Horário: ${horario}`);
+    console.log(`- Link de Compra: ${linkFinal}`);
 
-    const query = 'INSERT INTO eventos (nome, categoria, lat, lng, cidade, data_evento, horario) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    const values = [nome, categoria, lat, lng, cidadeFinal, dataFinal, horario];
+    const query = 'INSERT INTO eventos (nome, categoria, lat, lng, cidade, data_evento, horario, link_ingresso) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    const values = [nome, categoria, lat, lng, cidadeFinal, dataFinal, horario, linkFinal];
 
     db.query(query, values, (err, result) => {
         if (err) {
@@ -101,8 +112,8 @@ app.post('/eventos', (req, res) => {
             lng,
             cidade: cidadeFinal,
             data_evento: dataFinal,
-            horario
-
+            horario,
+            link_ingresso: linkFinal
         });
     });
 });

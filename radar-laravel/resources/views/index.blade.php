@@ -83,6 +83,11 @@
                                 </div>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label">Link de Compra de Ingresso (Opcional)</label>
+                                <input type="url" id="link_ingresso" name="link_ingresso" class="form-control border-primary" placeholder="Ex: https://site.com/ingressos">
+                            </div>
+
                             <input type="hidden" id="lat" name="lat">
                             <input type="hidden" id="lng" name="lng">
                             
@@ -153,6 +158,8 @@
                         const dataBr = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : "Sem data";
                         const horarioFormatado = ev.horario ? ev.horario.substring(0, 5) : "Não definido";
 
+                        const linkHtml = ev.link_ingresso ? `<br><strong>🎫 Ingressos:</strong> <a href="${ev.link_ingresso}" target="_blank" class="fw-bold text-decoration-none">Comprar Ingresso ↗</a>` : "";
+
                         L.marker([ev.lat, ev.lng], { icon: iconeFinal })
                             .addTo(map)
                             .bindPopup(`
@@ -161,6 +168,7 @@
                                 <strong>📅 Data:</strong> ${dataBr}<br>
                                 <strong>🕒 Horário:</strong> ${horarioFormatado}<br>
                                 <strong>📍 Local:</strong> ${ev.cidade}
+                                ${linkHtml}
                             `);
                     });
                 })
@@ -179,7 +187,8 @@
                 data_evento: document.getElementById('data_evento').value,
                 horario: document.getElementById('horario_evento').value, 
                 lat: document.getElementById('lat').value,
-                lng: document.getElementById('lng').value
+                lng: document.getElementById('lng').value,
+                link_ingresso: document.getElementById('link_ingresso').value
             };
 
             if (!payload.lat) { alert("Clique no mapa primeiro!"); return; }

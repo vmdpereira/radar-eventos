@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, Image, TouchableOpacity, Dimensions, Platform, Linking } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 // Importando sua imagem da pasta assets
@@ -9,6 +11,48 @@ import logoImg from './assets/radarlogo.jpeg';
 
 const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
 const AZUL_FUNDO_LOGO_EXATO = '#0059b3'; 
+
+// Configuração do handler para exibir notificações com o app em primeiro plano
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+// Fórmula de Haversine para calcular distância em metros
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Raio da Terra em metros
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // metros
+}
+
+// Formatar distância de forma legível
+function formatDistance(meters) {
+  if (meters === null || meters === undefined) return '';
+  if (meters < 1000) {
+    return `A ${Math.round(meters)}m de você`;
+  }
+  return `A ${(meters / 1000).toFixed(1)}km de você`;
+}
+
+// Formatar data em PT-BR
+function formatDate(dateString) {
+  if (!dateString) return 'Data não definida';
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return dateString;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -18,6 +62,55 @@ export default function App() {
   const [exibirPreferencias, setExibirPreferencias] = useState(false);
   const [categoriaFavorita, setCategoriaFavorita] = useState('Todos');
 
+  // Novos estados para favoritos e notificações
+  const [favoritos, setFavoritos] = useState([]);
+  const [scheduledNotifications, setScheduledNotifications] = useState({});
+  const [notificadosProximidade, setNotificadosProximidade] = useState(new Set());
+  const [eventoSelecionado, setEventoSelecionado] = useState(null);
+
+  // 1. Inicializar permissões de notificação e configurar canal no Android
+  useEffect(() => {
+    (async () => {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        console.log('Permissão para notificações não foi concedida!');
+      }
+
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      }
+    })();
+  }, []);
+
+  // 2. Carregar favoritos e agendamentos persistidos do AsyncStorage
+  useEffect(() => {
+    (async () => {
+      try {
+        const savedFavs = await AsyncStorage.getItem('@radar_favoritos');
+        if (savedFavs) {
+          setFavoritos(JSON.parse(savedFavs));
+        }
+        const savedNotes = await AsyncStorage.getItem('@radar_notifications');
+        if (savedNotes) {
+          setScheduledNotifications(JSON.parse(savedNotes));
+        }
+      } catch (err) {
+        console.error('Erro ao carregar favoritos salvos:', err);
+      }
+    })();
+  }, []);
+
+  // 3. Buscar localização inicial e eventos da API
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -40,6 +133,144 @@ export default function App() {
     })();
   }, []);
 
+  // 4. Monitoramento da distância em tempo real (Foreground Location Watcher)
+  useEffect(() => {
+    let subscription;
+    if (eventos.length === 0 || favoritos.length === 0) return;
+
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,   // Atualizar a cada 5 segundos
+          distanceInterval: 15,  // Atualizar a cada 15 metros
+        },
+        async (newLocation) => {
+          const { latitude, longitude } = newLocation.coords;
+          setLocation(newLocation.coords);
+
+          // Verificar todos os eventos favoritos
+          for (const ev of eventos) {
+            if (favoritos.includes(ev.id)) {
+              const dist = getDistance(
+                latitude,
+                longitude,
+                parseFloat(ev.lat),
+                parseFloat(ev.lng)
+              );
+
+              // Se o usuário estiver a menos de 1000m (1km)
+              if (dist < 1000) {
+                if (!notificadosProximidade.has(ev.id)) {
+                  // Dispara notificação imediata
+                  try {
+                    await Notifications.scheduleNotificationAsync({
+                      content: {
+                        title: "📍 Evento Favorito por Perto!",
+                        body: `O evento "${ev.nome}" está a apenas ${Math.round(dist)}m de você em ${ev.cidade}!`,
+                        sound: true,
+                      },
+                      trigger: null, // dispara imediatamente
+                    });
+
+                    // Registra que já notificou para este evento
+                    setNotificadosProximidade(prev => {
+                      const next = new Set(prev);
+                      next.add(ev.id);
+                      return next;
+                    });
+                  } catch (err) {
+                    console.error('Erro ao disparar notificação de proximidade:', err);
+                  }
+                }
+              } else if (dist > 1500) {
+                // Se se afastar mais de 1.5km, limpa o registro para permitir notificar novamente se se aproximar depois
+                if (notificadosProximidade.has(ev.id)) {
+                  setNotificadosProximidade(prev => {
+                    const next = new Set(prev);
+                    next.delete(ev.id);
+                    return next;
+                  });
+                }
+              }
+            }
+          }
+        }
+      );
+    })();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, [eventos, favoritos, notificadosProximidade]);
+
+  // Função para Alternar Favorito e Agendar/Cancelar Notificação do Dia do Evento
+  const toggleFavorito = async (evento) => {
+    const isFav = favoritos.includes(evento.id);
+    let novosFavoritos = [...favoritos];
+    let novasNotificacoes = { ...scheduledNotifications };
+
+    if (isFav) {
+      // 1. Remover dos favoritos
+      novosFavoritos = novosFavoritos.filter(id => id !== evento.id);
+
+      // Cancelar notificação agendada para o dia do evento se houver
+      const notificationId = scheduledNotifications[evento.id];
+      if (notificationId) {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(notificationId);
+          delete novasNotificacoes[evento.id];
+        } catch (err) {
+          console.error("Erro ao cancelar notificação:", err);
+        }
+      }
+    } else {
+      // 2. Adicionar aos favoritos
+      novosFavoritos.push(evento.id);
+
+      // Agendar notificação para o dia do evento se possuir data_evento válida
+      if (evento.data_evento) {
+        try {
+          const [ano, mes, dia] = evento.data_evento.split('-');
+          // Agendar para as 09:00 AM do dia do evento
+          const triggerDate = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia), 9, 0, 0);
+          const agora = new Date();
+
+          if (triggerDate > agora) {
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "📅 Hoje é o dia do Evento!",
+                body: `O evento "${evento.nome}" que você favoritou acontece hoje em ${evento.cidade}! Não perca!`,
+                sound: true,
+              },
+              trigger: triggerDate,
+            });
+            novasNotificacoes[evento.id] = notificationId;
+          } else {
+            console.log("A data do evento já passou, portanto não agendamos notificação.");
+          }
+        } catch (err) {
+          console.error("Erro ao agendar notificação:", err);
+        }
+      }
+    }
+
+    // Salvar as mudanças de forma persistente
+    try {
+      setFavoritos(novosFavoritos);
+      setScheduledNotifications(novasNotificacoes);
+      await AsyncStorage.setItem('@radar_favoritos', JSON.stringify(novosFavoritos));
+      await AsyncStorage.setItem('@radar_notifications', JSON.stringify(novasNotificacoes));
+    } catch (err) {
+      console.error('Erro ao salvar favoritos:', err);
+    }
+  };
+
   // 1. TELA DE PREFERÊNCIAS (DENTRO DA ESTRUTURA AZUL)
   if (exibirPreferencias) {
     return (
@@ -48,13 +279,15 @@ export default function App() {
         <Text style={styles.welcomeSubtitle}>Escolha o que você quer ver no mapa:</Text>
         
         <View style={styles.prefArea}>
-          {['Todos', 'Show', 'Cultura', 'Esporte', 'Outros'].map((cat) => (
+          {['Todos', 'Favoritos', 'Show', 'Cultura', 'Esporte', 'Outros'].map((cat) => (
             <TouchableOpacity 
               key={cat} 
               style={[styles.prefOption, categoriaFavorita === cat && styles.prefOptionActive]}
               onPress={() => setCategoriaFavorita(cat)}
             >
-              <Text style={[styles.prefText, categoriaFavorita === cat && styles.prefTextActive]}>{cat}</Text>
+              <Text style={[styles.prefText, categoriaFavorita === cat && styles.prefTextActive]}>
+                {cat === 'Favoritos' ? '⭐ Favoritos' : cat}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -95,10 +328,12 @@ export default function App() {
     );
   }
 
-  // FILTRAGEM DOS EVENTOS COM BASE NA PREFERÊNCIA
+  // FILTRAGEM DOS EVENTOS COM BASE NA PREFERÊNCIA OU FAVORITOS
   const eventosFiltrados = categoriaFavorita === 'Todos' 
     ? eventos 
-    : eventos.filter(ev => ev.categoria === categoriaFavorita);
+    : categoriaFavorita === 'Favoritos'
+      ? eventos.filter(ev => favoritos.includes(ev.id))
+      : eventos.filter(ev => ev.categoria === categoriaFavorita);
 
   return (
     <View style={styles.container}>
@@ -111,21 +346,106 @@ export default function App() {
           longitudeDelta: 0.0421,
         }} 
         showsUserLocation={true}
+        onPress={() => setEventoSelecionado(null)} // Fecha o card se tocar no mapa vazio
       >
-        {eventosFiltrados.map((evento) => (
-          <Marker
-            key={evento.id || String(evento.lat) + String(evento.lng)}
-            coordinate={{ latitude: parseFloat(evento.lat), longitude: parseFloat(evento.lng) }}
-            title={evento.nome}
-            pinColor={AZUL_FUNDO_LOGO_EXATO}
-            description={`${evento.categoria} - ${evento.cidade}`}
-          />
-        ))}
+        {eventosFiltrados.map((evento) => {
+          const isFav = favoritos.includes(evento.id);
+          const linkStr = evento.link_ingresso ? evento.link_ingresso : "Não informado";
+          return (
+            <Marker
+              key={evento.id || String(evento.lat) + String(evento.lng)}
+              coordinate={{ latitude: parseFloat(evento.lat), longitude: parseFloat(evento.lng) }}
+              title={evento.nome}
+              pinColor={isFav ? '#FFD700' : AZUL_FUNDO_LOGO_EXATO} // Marcadores favoritos ficam amarelos/dourados!
+              description={`Categoria: ${evento.categoria}\nCidade: ${evento.cidade}\nData: ${formatDate(evento.data_evento)}\nIngressos: ${linkStr}`}
+              onPress={() => setEventoSelecionado(evento)}
+            />
+          );
+        })}
       </MapView>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => setExibirBoasVindas(true)}>
+      {/* BOTÃO VOLTAR PARA A TELA DE BOAS VINDAS */}
+      <TouchableOpacity style={styles.backButton} onPress={() => { setEventoSelecionado(null); setExibirBoasVindas(true); }}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
+
+      {/* CARD INFERIOR PREMIUM DE DETALHES DO EVENTO */}
+      {eventoSelecionado && (() => {
+        const isFav = favoritos.includes(eventoSelecionado.id);
+        const dist = location ? getDistance(
+          location.latitude,
+          location.longitude,
+          parseFloat(eventoSelecionado.lat),
+          parseFloat(eventoSelecionado.lng)
+        ) : null;
+
+        let emoji = '📅';
+        if (eventoSelecionado.categoria === 'Show') emoji = '🎤';
+        else if (eventoSelecionado.categoria === 'Cultura') emoji = '🎨';
+        else if (eventoSelecionado.categoria === 'Esporte') emoji = '🏆';
+        else if (eventoSelecionado.categoria === 'Outros') emoji = '⭐';
+
+        return (
+          <View style={styles.bottomCard}>
+            <View style={styles.cardHeader}>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>{emoji} {eventoSelecionado.categoria}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.closeCardButton} 
+                onPress={() => setEventoSelecionado(null)}
+              >
+                <Text style={styles.closeCardText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.cardTitle}>{eventoSelecionado.nome}</Text>
+            
+            <View style={styles.cardInfoRow}>
+              <Text style={styles.cardInfoLabel}>📍 Localização:</Text>
+              <Text style={styles.cardInfoValue}>{eventoSelecionado.cidade}</Text>
+            </View>
+
+            <View style={styles.cardInfoRow}>
+              <Text style={styles.cardInfoLabel}>📅 Data e Hora:</Text>
+              <Text style={styles.cardInfoValue}>
+                {formatDate(eventoSelecionado.data_evento)} às {eventoSelecionado.horario || 'Horário indefinido'}
+              </Text>
+            </View>
+
+            {eventoSelecionado.link_ingresso ? (
+              <View style={styles.cardInfoRow}>
+                <Text style={styles.cardInfoLabel}>🎫 Ingressos:</Text>
+                <TouchableOpacity onPress={() => Linking.openURL(eventoSelecionado.link_ingresso).catch(() => alert(`Simulando abertura do link: ${eventoSelecionado.link_ingresso}`))}>
+                  <Text style={styles.cardLinkValue} numberOfLines={1} ellipsizeMode="tail">
+                    {eventoSelecionado.link_ingresso}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.cardInfoRow}>
+                <Text style={styles.cardInfoLabel}>🎫 Ingressos:</Text>
+                <Text style={[styles.cardInfoValue, { color: '#888', fontStyle: 'italic' }]}>Entrada gratuita / Não informado</Text>
+              </View>
+            )}
+
+            {dist !== null && (
+              <View style={styles.cardDistanceRow}>
+                <Text style={styles.cardDistanceText}>📍 {formatDistance(dist)}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity 
+              style={[styles.favButton, isFav && styles.favButtonActive]} 
+              onPress={() => toggleFavorito(eventoSelecionado)}
+            >
+              <Text style={[styles.favButtonText, isFav && styles.favButtonTextActive]}>
+                {isFav ? '🌟 Favoritado!' : '⭐ Adicionar aos Favoritos'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        );
+      })()}
     </View>
   );
 }
@@ -156,5 +476,118 @@ const styles = StyleSheet.create({
 
   backButton: { position: 'absolute', top: 50, left: 20, backgroundColor: 'white', width: 45, height: 45, borderRadius: 22.5, alignItems: 'center', justifyContent: 'center', elevation: 5 },
   backButtonText: { fontSize: 24, color: AZUL_FUNDO_LOGO_EXATO, fontWeight: 'bold' },
-  footerText: { color: '#ffffff', position: 'absolute', bottom: 30, fontSize: 12, opacity: 0.7 }
+  footerText: { color: '#ffffff', position: 'absolute', bottom: 30, fontSize: 12, opacity: 0.7 },
+
+  // Card inferior de detalhes do evento (Premium Bottom Sheet layout)
+  bottomCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    borderRadius: 25,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  categoryBadge: {
+    backgroundColor: 'rgba(0, 89, 179, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    color: AZUL_FUNDO_LOGO_EXATO,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  closeCardButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeCardText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 16,
+  },
+  cardInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardInfoLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    width: 100,
+  },
+  cardInfoValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
+  },
+  cardLinkValue: {
+    fontSize: 14,
+    color: '#0059b3',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+    flex: 1,
+  },
+  cardDistanceRow: {
+    backgroundColor: '#e6f2ff',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  cardDistanceText: {
+    color: AZUL_FUNDO_LOGO_EXATO,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  favButton: {
+    backgroundColor: '#f2f2f2',
+    paddingVertical: 14,
+    borderRadius: 15,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+  },
+  favButtonActive: {
+    backgroundColor: '#FFD700',
+    borderColor: '#E6C200',
+  },
+  favButtonText: {
+    color: '#444',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  favButtonTextActive: {
+    color: '#000',
+  },
 });
