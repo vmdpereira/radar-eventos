@@ -6,13 +6,11 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-// Importando sua imagem da pasta assets
 import logoImg from './assets/radarlogo.jpeg';
 
 const API_URL = 'https://radar-api-nk3u.onrender.com/eventos';
 const AZUL_FUNDO_LOGO_EXATO = '#0059b3'; 
 
-// Configuração do handler para exibir notificações com o app em primeiro plano
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -21,9 +19,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Fórmula de Haversine para calcular distância em metros
 function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Raio da Terra em metros
+  const R = 6371e3; 
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -34,10 +31,9 @@ function getDistance(lat1, lon1, lat2, lon2) {
             Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c; // metros
+  return R * c; 
 }
 
-// Formatar distância de forma legível
 function formatDistance(meters) {
   if (meters === null || meters === undefined) return '';
   if (meters < 1000) {
@@ -46,7 +42,6 @@ function formatDistance(meters) {
   return `A ${(meters / 1000).toFixed(1)}km de você`;
 }
 
-// Formatar data em PT-BR
 function formatDate(dateString) {
   if (!dateString) return 'Data não definida';
   const parts = dateString.split('-');
@@ -62,13 +57,11 @@ export default function App() {
   const [exibirPreferencias, setExibirPreferencias] = useState(false);
   const [categoriaFavorita, setCategoriaFavorita] = useState('Todos');
 
-  // Novos estados para favoritos e notificações
   const [favoritos, setFavoritos] = useState([]);
   const [scheduledNotifications, setScheduledNotifications] = useState({});
   const [notificadosProximidade, setNotificadosProximidade] = useState(new Set());
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
 
-  // 1. Inicializar permissões de notificação e configurar canal no Android
   useEffect(() => {
     (async () => {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -92,7 +85,6 @@ export default function App() {
     })();
   }, []);
 
-  // 2. Carregar favoritos e agendamentos persistidos do AsyncStorage
   useEffect(() => {
     (async () => {
       try {
@@ -110,7 +102,6 @@ export default function App() {
     })();
   }, []);
 
-  // 3. Buscar localização inicial e eventos da API
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -133,7 +124,6 @@ export default function App() {
     })();
   }, []);
 
-  // 4. Monitoramento da distância em tempo real (Foreground Location Watcher)
   useEffect(() => {
     let subscription;
     if (eventos.length === 0 || favoritos.length === 0) return;
@@ -145,14 +135,13 @@ export default function App() {
       subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 5000,   // Atualizar a cada 5 segundos
-          distanceInterval: 15,  // Atualizar a cada 15 metros
+          timeInterval: 5000,   
+          distanceInterval: 15,  
         },
         async (newLocation) => {
           const { latitude, longitude } = newLocation.coords;
           setLocation(newLocation.coords);
 
-          // Verificar todos os eventos favoritos
           for (const ev of eventos) {
             if (favoritos.includes(ev.id)) {
               const dist = getDistance(
@@ -162,10 +151,8 @@ export default function App() {
                 parseFloat(ev.lng)
               );
 
-              // Se o usuário estiver a menos de 1000m (1km)
               if (dist < 1000) {
                 if (!notificadosProximidade.has(ev.id)) {
-                  // Dispara notificação imediata
                   try {
                     await Notifications.scheduleNotificationAsync({
                       content: {
@@ -173,10 +160,9 @@ export default function App() {
                         body: `O evento "${ev.nome}" está a apenas ${Math.round(dist)}m de você em ${ev.cidade}!`,
                         sound: true,
                       },
-                      trigger: null, // dispara imediatamente
+                      trigger: null, 
                     });
 
-                    // Registra que já notificou para este evento
                     setNotificadosProximidade(prev => {
                       const next = new Set(prev);
                       next.add(ev.id);
@@ -187,7 +173,6 @@ export default function App() {
                   }
                 }
               } else if (dist > 1500) {
-                // Se se afastar mais de 1.5km, limpa o registro para permitir notificar novamente se se aproximar depois
                 if (notificadosProximidade.has(ev.id)) {
                   setNotificadosProximidade(prev => {
                     const next = new Set(prev);
@@ -209,17 +194,14 @@ export default function App() {
     };
   }, [eventos, favoritos, notificadosProximidade]);
 
-  // Função para Alternar Favorito e Agendar/Cancelar Notificação do Dia do Evento
   const toggleFavorito = async (evento) => {
     const isFav = favoritos.includes(evento.id);
     let novosFavoritos = [...favoritos];
     let novasNotificacoes = { ...scheduledNotifications };
 
     if (isFav) {
-      // 1. Remover dos favoritos
       novosFavoritos = novosFavoritos.filter(id => id !== evento.id);
 
-      // Cancelar notificação agendada para o dia do evento se houver
       const notificationId = scheduledNotifications[evento.id];
       if (notificationId) {
         try {
@@ -230,14 +212,11 @@ export default function App() {
         }
       }
     } else {
-      // 2. Adicionar aos favoritos
       novosFavoritos.push(evento.id);
 
-      // Agendar notificação para o dia do evento se possuir data_evento válida
       if (evento.data_evento) {
         try {
           const [ano, mes, dia] = evento.data_evento.split('-');
-          // Agendar para as 09:00 AM do dia do evento
           const triggerDate = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia), 9, 0, 0);
           const agora = new Date();
 
@@ -260,7 +239,6 @@ export default function App() {
       }
     }
 
-    // Salvar as mudanças de forma persistente
     try {
       setFavoritos(novosFavoritos);
       setScheduledNotifications(novasNotificacoes);
@@ -271,7 +249,6 @@ export default function App() {
     }
   };
 
-  // 1. TELA DE PREFERÊNCIAS (DENTRO DA ESTRUTURA AZUL)
   if (exibirPreferencias) {
     return (
       <View style={styles.welcomeContainer}>
@@ -302,7 +279,6 @@ export default function App() {
     );
   }
 
-  // 2. TELA DE BOAS-VINDAS
   if (exibirBoasVindas) {
     return (
       <View style={styles.welcomeContainer}>
@@ -315,7 +291,6 @@ export default function App() {
             <Text style={styles.buttonTextWelcome}>Acessar Mapa</Text>
           </TouchableOpacity>
 
-          {/* BOTÃO DE PREFERÊNCIAS NA TELA INICIAL */}
           <TouchableOpacity 
             style={styles.buttonSecondary} 
             onPress={() => setExibirPreferencias(true)}
@@ -328,7 +303,6 @@ export default function App() {
     );
   }
 
-  // FILTRAGEM DOS EVENTOS COM BASE NA PREFERÊNCIA OU FAVORITOS
   const eventosFiltrados = categoriaFavorita === 'Todos' 
     ? eventos 
     : categoriaFavorita === 'Favoritos'
@@ -346,7 +320,7 @@ export default function App() {
           longitudeDelta: 0.0421,
         }} 
         showsUserLocation={true}
-        onPress={() => setEventoSelecionado(null)} // Fecha o card se tocar no mapa vazio
+        onPress={() => setEventoSelecionado(null)} 
       >
         {eventosFiltrados.map((evento) => {
           const isFav = favoritos.includes(evento.id);
@@ -356,7 +330,7 @@ export default function App() {
               key={evento.id || String(evento.lat) + String(evento.lng)}
               coordinate={{ latitude: parseFloat(evento.lat), longitude: parseFloat(evento.lng) }}
               title={evento.nome}
-              pinColor={isFav ? '#FFD700' : AZUL_FUNDO_LOGO_EXATO} // Marcadores favoritos ficam amarelos/dourados!
+              pinColor={isFav ? '#FFD700' : AZUL_FUNDO_LOGO_EXATO} 
               description={`Categoria: ${evento.categoria}\nCidade: ${evento.cidade}\nData: ${formatDate(evento.data_evento)}\nIngressos: ${linkStr}`}
               onPress={() => setEventoSelecionado(evento)}
             />
@@ -364,12 +338,10 @@ export default function App() {
         })}
       </MapView>
 
-      {/* BOTÃO VOLTAR PARA A TELA DE BOAS VINDAS */}
       <TouchableOpacity style={styles.backButton} onPress={() => { setEventoSelecionado(null); setExibirBoasVindas(true); }}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
 
-      {/* CARD INFERIOR PREMIUM DE DETALHES DO EVENTO */}
       {eventoSelecionado && (() => {
         const isFav = favoritos.includes(eventoSelecionado.id);
         const dist = location ? getDistance(
@@ -461,13 +433,11 @@ const styles = StyleSheet.create({
   welcomeTitle: { fontSize: 28, fontWeight: 'bold', color: '#ffffff', textAlign: 'center', marginBottom: 10 },
   welcomeSubtitle: { fontSize: 16, color: '#ffffff', textAlign: 'center', marginBottom: 30, opacity: 0.9 },
   
-  // Botões
   buttonWelcome: { backgroundColor: '#ffffff', paddingVertical: 18, borderRadius: 15, width: '100%', alignItems: 'center', elevation: 8, marginBottom: 15 },
   buttonTextWelcome: { color: AZUL_FUNDO_LOGO_EXATO, fontSize: 18, fontWeight: 'bold' },
   buttonSecondary: { paddingVertical: 10, width: '100%', alignItems: 'center' },
   buttonTextSecondary: { color: '#ffffff', fontSize: 16, fontWeight: '600', textDecorationLine: 'underline' },
   
-  // Preferências
   prefArea: { width: '100%', paddingHorizontal: 20, marginBottom: 30 },
   prefOption: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 15, borderRadius: 10, marginBottom: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   prefOptionActive: { backgroundColor: '#ffffff' },
@@ -478,7 +448,6 @@ const styles = StyleSheet.create({
   backButtonText: { fontSize: 24, color: AZUL_FUNDO_LOGO_EXATO, fontWeight: 'bold' },
   footerText: { color: '#ffffff', position: 'absolute', bottom: 30, fontSize: 12, opacity: 0.7 },
 
-  // Card inferior de detalhes do evento (Premium Bottom Sheet layout)
   bottomCard: {
     position: 'absolute',
     bottom: 20,

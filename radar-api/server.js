@@ -1,5 +1,4 @@
 const path = require('path');
-// Garante que o Node procure o .env na pasta correta da API
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const express = require('express');
@@ -8,20 +7,16 @@ const cors = require('cors');
 
 const app = express();
 
-// O Render define a porta automaticamente através da variável de ambiente PORT
 const PORT = process.env.PORT || 3001; 
 
-// Debug inicial para conferência em Cajati
 console.log("--- DEBUG DE CONEXÃO ---");
 console.log("Tentando conectar com o usuário:", process.env.DB_USER);
 console.log("No host:", process.env.DB_HOST);
 console.log("------------------------");
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// --- CONFIGURAÇÃO DO POOL DE CONEXÃO (Otimizado para Nuvem/Aiven) ---
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -36,7 +31,6 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Teste de conexão imediato ao iniciar e atualização do Schema do Banco
 db.getConnection((err, connection) => {
     if (err) {
         console.error('❌ ERRO CRÍTICO: Falha ao conectar ao Aiven:', err.message);
@@ -44,7 +38,6 @@ db.getConnection((err, connection) => {
     }
     console.log('✅ DATABASE: Conexão estabelecida com o MySQL no Aiven!');
     
-    // Atualiza automaticamente o banco de dados adicionando a coluna link_ingresso se não existir
     connection.query("ALTER TABLE eventos ADD COLUMN link_ingresso VARCHAR(255) DEFAULT NULL", (alterErr) => {
         if (alterErr && alterErr.errno !== 1060) {
             console.error('⚠️ ALERTA SCHEMA: Falha ao adicionar coluna link_ingresso:', alterErr.message);
@@ -55,14 +48,10 @@ db.getConnection((err, connection) => {
     });
 });
 
-// --- ROTAS DA API ---
-
-// 1. Rota de Verificação (Health Check)
 app.get('/', (req, res) => {
     res.send('API Radar Eventos Online (Render + Aiven)');
 });
 
-// 2. Listar eventos (GET)
 app.get('/eventos', (req, res) => {
     const query = 'SELECT * FROM eventos ORDER BY id DESC';
     
@@ -76,7 +65,6 @@ app.get('/eventos', (req, res) => {
     });
 });
 
-// 3. Cadastrar evento (POST) - Com Logs detalhados
 app.post('/eventos', (req, res) => {
     const { nome, categoria, lat, lng, cidade, data_evento, horario, link_ingresso } = req.body;
     
@@ -118,7 +106,6 @@ app.post('/eventos', (req, res) => {
     });
 });
 
-// 4. Excluir evento (DELETE)
 app.delete('/eventos/:id', (req, res) => {
     const { id } = req.params;
 
@@ -141,7 +128,6 @@ app.delete('/eventos/:id', (req, res) => {
     });
 });
 
-// Inicialização do servidor configurada para aceitar conexões externas (0.0.0.0)
 app.listen(PORT, '0.0.0.0', () => {
     console.log('==================================================');
     console.log(`🚀 BACKEND RADAR EVENTOS ONLINE`);
