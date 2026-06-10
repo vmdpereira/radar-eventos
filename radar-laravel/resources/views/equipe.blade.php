@@ -93,7 +93,7 @@
             <div class="col-12 col-md-6 col-lg-4 mb-4">
                 <div class="card shadow-sm h-100 border-primary">
                     <div class="card-body text-center">
-                        <img src="./img/rhuan.jpeg" class="img-fluid card-img-radar" alt="Rhuan Felipe Gomes Domingues">
+                        <img src="./img/rhuan.jpg" class="img-fluid card-img-radar" alt="Rhuan Felipe Gomes Domingues">
                         <h4 class="card-title text-radar">Rhuan Felipe Gomes Domingues</h4>
                     </div>
                 </div>
