@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Image, TouchableOpacity, Dimensions, Platform, Linking } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -48,6 +48,127 @@ function formatDate(dateString) {
   if (parts.length !== 3) return dateString;
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
+
+const generateLeafletHtml = (location, eventosFiltrados, favoritos, azulLogo) => {
+  const userLat = location ? location.latitude : -24.8576;
+  const userLng = location ? location.longitude : -48.5058;
+
+  // Map events to simple safe structures
+  const safeEvents = eventosFiltrados.map(ev => ({
+    id: ev.id,
+    nome: ev.nome.replace(/'/g, "\\'").replace(/"/g, '\\"'),
+    cidade: ev.cidade.replace(/'/g, "\\'").replace(/"/g, '\\"'),
+    categoria: ev.categoria,
+    lat: parseFloat(ev.lat),
+    lng: parseFloat(ev.lng)
+  }));
+
+  const serializedEvents = JSON.stringify(safeEvents);
+  const serializedFavs = JSON.stringify(favoritos);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <style>
+        html, body, #map {
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          background: #f4f6f9;
+        }
+        .leaflet-div-icon {
+          background: transparent;
+          border: none;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script>
+        const map = L.map('map', {
+          zoomControl: false
+        }).setView([${userLat}, ${userLng}], 14);
+
+        L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          maxZoom: 20
+        }).addTo(map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        const hasLocation = ${location ? 'true' : 'false'};
+        if (hasLocation) {
+          const userIcon = L.divIcon({
+            html: '<div style="width: 16px; height: 16px; background: #007bff; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,123,255,0.6);"></div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          });
+          L.marker([${userLat}, ${userLng}], { icon: userIcon }).addTo(map);
+        }
+
+        const eventos = ${serializedEvents};
+        const favoritos = ${serializedFavs};
+        const azulColor = '${azulLogo}';
+
+        eventos.forEach(ev => {
+          const isFav = favoritos.includes(ev.id);
+          const pinColor = isFav ? '#FFD700' : azulColor;
+          const pinBorder = isFav ? '#E6C200' : '#003d80';
+
+          const markerIcon = L.divIcon({
+            html: \`
+              <div style="
+                width: 24px;
+                height: 24px;
+                background: \${pinColor};
+                border: 2px solid \${pinBorder};
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              ">
+                <div style="
+                  width: 8px;
+                  height: 8px;
+                  background: white;
+                  border-radius: 50%;
+                  transform: rotate(45deg);
+                "></div>
+              </div>
+            \`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+          });
+
+          const marker = L.marker([ev.lat, ev.lng], { icon: markerIcon }).addTo(map);
+          
+          marker.on('click', () => {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'SELECT_EVENTO',
+              eventoId: ev.id
+            }));
+          });
+        });
+
+        // Tap map to dismiss bottom sheet
+        map.on('click', (e) => {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'DESELECT_EVENTO'
+          }));
+        });
+      </script>
+    </body>
+    </html>
+  `;
+};
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -104,22 +225,41 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Permissão de localização negada.');
-        setLoading(false);
-        return;
-      }
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation.coords);
+      // 1. Fetch events from API immediately and independently of location
+      axios.get(API_URL)
+        .then(response => {
+          setEventos(response.data);
+        })
+        .catch(error => {
+          console.error("Erro na API:", error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
 
+      // 2. Request permissions and get location safely without blocking the events API
       try {
-        const response = await axios.get(API_URL);
-        setEventos(response.data);
-      } catch (error) {
-        console.error("Erro na API:", error);
-      } finally {
-        setLoading(false);
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Permissão de localização negada.');
+          return;
+        }
+
+        // Try to get last known position first (extremely fast, doesn't hang)
+        let currentLocation = await Location.getLastKnownPositionAsync({});
+        
+        // If not available, request current position with a balanced accuracy
+        if (!currentLocation) {
+          currentLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+        }
+
+        if (currentLocation) {
+          setLocation(currentLocation.coords);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar localização:', err);
       }
     })();
   }, []);
@@ -311,32 +451,28 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <MapView 
-        style={styles.map} 
-        initialRegion={{
-          latitude: location ? location.latitude : -24.8576,
-          longitude: location ? location.longitude : -48.5058,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }} 
-        showsUserLocation={true}
-        onPress={() => setEventoSelecionado(null)} 
-      >
-        {eventosFiltrados.map((evento) => {
-          const isFav = favoritos.includes(evento.id);
-          const linkStr = evento.link_ingresso ? evento.link_ingresso : "Não informado";
-          return (
-            <Marker
-              key={evento.id || String(evento.lat) + String(evento.lng)}
-              coordinate={{ latitude: parseFloat(evento.lat), longitude: parseFloat(evento.lng) }}
-              title={evento.nome}
-              pinColor={isFav ? '#FFD700' : AZUL_FUNDO_LOGO_EXATO} 
-              description={`Categoria: ${evento.categoria}\nCidade: ${evento.cidade}\nData: ${formatDate(evento.data_evento)}\nIngressos: ${linkStr}`}
-              onPress={() => setEventoSelecionado(evento)}
-            />
-          );
-        })}
-      </MapView>
+      <WebView
+        style={styles.map}
+        originWhitelist={['*']}
+        source={{ html: generateLeafletHtml(location, eventosFiltrados, favoritos, AZUL_FUNDO_LOGO_EXATO) }}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'SELECT_EVENTO') {
+              const selected = eventos.find(ev => ev.id === data.eventoId);
+              if (selected) {
+                setEventoSelecionado(selected);
+              }
+            } else if (data.type === 'DESELECT_EVENTO') {
+              setEventoSelecionado(null);
+            }
+          } catch (err) {
+            console.error('Erro na mensagem do WebView:', err);
+          }
+        }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+      />
 
       <TouchableOpacity style={styles.backButton} onPress={() => { setEventoSelecionado(null); setExibirBoasVindas(true); }}>
         <Text style={styles.backButtonText}>←</Text>

@@ -20,10 +20,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.vmdpereira.radarmobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDUMMYKEY_FOR_MAPS_INTEGRATION"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "05b22c21-8a3a-4629-9b73-0241657dab2c"
+      }
     }
   }
 }
